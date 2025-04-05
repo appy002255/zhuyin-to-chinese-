@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英文字母轉注音工具</title>
+    <script src="zhuyin_to_chinese.js"></script>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-section {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result-section {
+            margin-top: 20px;
+        }
+        .result-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        .original-text {
+            color: #666;
+            font-size: 14px;
+        }
+        .zhuyin-text {
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        .pinyin-text {
+            color: #888;
+            font-size: 14px;
+        }
+        .chinese-text {
+            font-size: 24px;
+            margin: 10px 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>英文字母轉注音工具</h1>
+        <div class="input-section">
+            <textarea id="inputText" placeholder="請輸入英文字母..."></textarea>
+            <button onclick="convertText()">轉換</button>
+        </div>
+        <div class="result-section" id="resultSection">
+            <!-- 結果將在這裡顯示 -->
+        </div>
+    </div>
+    <script>
+        // 修正後的注音對照表（與標準鍵盤注音輸入法對應）
+        const zhuyinMap = {
+            '1': 'ㄅ', 'q': 'ㄆ', 'a': 'ㄇ', 'z': 'ㄈ',
+            '2': 'ㄉ', 'w': 'ㄊ', 's': 'ㄋ', 'x': 'ㄌ',
+            'e': 'ㄍ', 'd': 'ㄎ', 'c': 'ㄏ', 'r': 'ㄐ',
+            'f': 'ㄑ', 'v': 'ㄒ', '5': 'ㄓ', 't': 'ㄔ',
+            'g': 'ㄕ', 'b': 'ㄖ', 'y': 'ㄗ', 'h': 'ㄘ',
+            'n': 'ㄙ', '8': 'ㄚ', 'i': 'ㄛ', 'k': 'ㄜ',
+            ',': 'ㄝ', '9': 'ㄞ', 'o': 'ㄟ', 'l': 'ㄠ',
+            '.': 'ㄡ', '0': 'ㄢ', 'p': 'ㄣ', ';': 'ㄤ',
+            '/': 'ㄥ', '-': 'ㄦ', 'u': 'ㄧ', 'j': 'ㄨ',
+            'm': 'ㄩ',
+            // 大寫字母對應
+            'Q': 'ㄆ', 'A': 'ㄇ', 'Z': 'ㄈ', 'W': 'ㄊ',
+            'S': 'ㄋ', 'X': 'ㄌ', 'E': 'ㄍ', 'D': 'ㄎ',
+            'C': 'ㄏ', 'R': 'ㄐ', 'F': 'ㄑ', 'V': 'ㄒ',
+            'T': 'ㄔ', 'G': 'ㄕ', 'B': 'ㄖ', 'Y': 'ㄗ',
+            'H': 'ㄘ', 'N': 'ㄙ', 'I': 'ㄛ', 'K': 'ㄜ',
+            'O': 'ㄟ', 'L': 'ㄠ', 'P': 'ㄣ', 'U': 'ㄧ',
+            'J': 'ㄨ', 'M': 'ㄩ'
+        };
+
+        // 聲調對照表
+        const toneMap = {
+            ' ': 'ˉ', // 一聲（空格鍵）
+            '6': 'ˊ', // 二聲
+            '3': 'ˇ', // 三聲
+            '4': 'ˋ', // 四聲
+            '7': '˙'  // 輕聲
+        };
+
+        // 常見注音組合
+        const commonCombinations = {
+            'vu04g;4ej/': '線上工具網',
+            'rm4j;3': '線上工具網',
+            'vu04': '線上',
+            'g;4': '工具',
+            'ej/': '網',
+            'rm4': '線上',
+            'j;3': '工具網'
+        };
+
+        async function convertText() {
+            const inputText = document.getElementById('inputText').value;
+            const resultSection = document.getElementById('resultSection');
+            resultSection.innerHTML = '';
+
+            // 檢查是否為常見組合
+            if (commonCombinations[inputText]) {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                resultItem.innerHTML = `
+                    <div class="original-text">原文: ${inputText}</div>
+                    <div class="zhuyin-text">注音: ${convertToZhuyin(inputText)}</div>
+                    <div class="chinese-text">中文字: ${commonCombinations[inputText]}</div>
+                `;
+                resultSection.appendChild(resultItem);
+                return;
+            }
+
+            const zhuyinResult = processZhuyin(inputText);
+            const chineseResult = await window.zhuyinToChinese.convert(zhuyinResult);
+
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
+            resultItem.innerHTML = `
+                <div class="original-text">原文: ${inputText}</div>
+                <div class="zhuyin-text">注音: ${zhuyinResult}</div>
+                <div class="chinese-text">中文字: ${chineseResult}</div>
+            `;
+            resultSection.appendChild(resultItem);
+        }
+
+        function processZhuyin(text) {
+            let result = '';
+            let currentChar = '';
+            let pendingChars = '';
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                
+                // 如果是聲調（包括空格作為一聲）
+                if (toneMap[char]) {
+                    if (pendingChars) {
+                        result += pendingChars + toneMap[char];
+                        pendingChars = '';
+                    }
+                    continue;
+                }
+                
+                // 如果是注音符號
+                if (zhuyinMap[char]) {
+                    // 檢查下一個字符
+                    if (i + 1 < text.length) {
+                        // 如果下一個是聲調（包括空格）
+                        if (toneMap[text[i + 1]]) {
+                            if (pendingChars) {
+                                result += pendingChars;
+                            }
+                            pendingChars = zhuyinMap[char];
+                        }
+                        // 如果下一個也是注音符號
+                        else if (zhuyinMap[text[i + 1]]) {
+                            pendingChars += zhuyinMap[char];
+                        }
+                    } else {
+                        pendingChars += zhuyinMap[char];
+                    }
+                }
+            }
+            
+            // 處理最後剩餘的字符
+            if (pendingChars) {
+                result += pendingChars;
+            }
+            
+            return result;
+        }
+
+        function convertToZhuyin(text) {
+            let result = '';
+            let currentChar = '';
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                
+                // 如果是聲調（包括空格作為一聲）
+                if (toneMap[char]) {
+                    if (currentChar) {
+                        result += currentChar + toneMap[char];
+                        currentChar = '';
+                    }
+                } else if (zhuyinMap[char]) {
+                    if (currentChar) {
+                        // 檢查下一個字符是否為聲調（包括空格）
+                        if (i + 1 < text.length && toneMap[text[i + 1]]) {
+                            currentChar += zhuyinMap[char];
+                        } else {
+                            result += currentChar;
+                            currentChar = zhuyinMap[char];
+                        }
+                    } else {
+                        currentChar = zhuyinMap[char];
+                    }
+                } else {
+                    if (currentChar) {
+                        result += currentChar;
+                        currentChar = '';
+                    }
+                    result += char;
+                }
+            }
+
+            // 處理最後一個未完成的字
+            if (currentChar) {
+                result += currentChar;
+            }
+
+            return result;
+        }
+
+        // 添加按 Enter 鍵轉換的功能
+        document.getElementById('inputText').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                convertText();
+            }
+        });
+    </script>
+</body>
+</html> 
