@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>英文字母轉注音工具</title>
-    <script src="zhuyin_to_chinese.js"></script>
     <style>
         body {
             font-family: 'Microsoft JhengHei', Arial, sans-serif;
@@ -71,11 +70,6 @@
             color: #888;
             font-size: 14px;
         }
-        .chinese-text {
-            font-size: 24px;
-            margin: 10px 0;
-            color: #333;
-        }
     </style>
 </head>
 <body>
@@ -132,7 +126,7 @@
             'j;3': '工具網'
         };
 
-        async function convertText() {
+        function convertText() {
             const inputText = document.getElementById('inputText').value;
             const resultSection = document.getElementById('resultSection');
             resultSection.innerHTML = '';
@@ -144,21 +138,17 @@
                 resultItem.innerHTML = `
                     <div class="original-text">原文: ${inputText}</div>
                     <div class="zhuyin-text">注音: ${convertToZhuyin(inputText)}</div>
-                    <div class="chinese-text">中文字: ${commonCombinations[inputText]}</div>
+                    <div class="meaning-text">可能的意思: ${commonCombinations[inputText]}</div>
                 `;
                 resultSection.appendChild(resultItem);
                 return;
             }
 
-            const zhuyinResult = processZhuyin(inputText);
-            const chineseResult = await window.zhuyinToChinese.convert(zhuyinResult);
-
             const resultItem = document.createElement('div');
             resultItem.className = 'result-item';
             resultItem.innerHTML = `
                 <div class="original-text">原文: ${inputText}</div>
-                <div class="zhuyin-text">注音: ${zhuyinResult}</div>
-                <div class="chinese-text">中文字: ${chineseResult}</div>
+                <div class="zhuyin-text">注音: ${processZhuyin(inputText)}</div>
             `;
             resultSection.appendChild(resultItem);
         }
